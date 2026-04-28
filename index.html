@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PongLearn</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <section class="intro-overlay" id="introOverlay" aria-labelledby="introTitle">
+      <div class="intro-card">
+        <div class="intro-progress" aria-label="Introduction progress">
+          <span class="active" data-intro-dot="0"></span>
+          <span data-intro-dot="1"></span>
+          <span data-intro-dot="2"></span>
+        </div>
+
+        <article class="intro-screen active" data-intro-screen="0">
+          <p class="eyebrow">Educational simulation</p>
+          <h1 id="introTitle">Before the paddle learns</h1>
+          <p>
+            This is a simulated experiment. You are about to watch a simple game become a classroom for one idea:
+            software can improve by trying actions, receiving feedback, and changing what it does next time.
+          </p>
+          <div class="intro-visual">
+            <span>Try</span>
+            <i></i>
+            <span>Feedback</span>
+            <i></i>
+            <span>Remember</span>
+          </div>
+        </article>
+
+        <article class="intro-screen" data-intro-screen="1">
+          <p class="eyebrow">Inspired by DeepMind</p>
+          <h1>The principle behind AlphaGo</h1>
+          <p>
+            DeepMind's AlphaGo showed the power of learning from experience and reward. This project does not recreate
+            AlphaGo. It borrows the teaching principle in a smaller form: a Pong paddle builds a habit from repeated
+            attempts. The paper describes policy estimates for choosing moves, value estimates for judging positions,
+            reinforcement learning from self-play, and search guided by those estimates.
+          </p>
+          <div class="intro-compare">
+            <div>
+              <strong>AlphaGo</strong>
+              <span>complex board positions, move choices, long-term outcomes</span>
+            </div>
+            <div>
+              <strong>PongLearn</strong>
+              <span>ball position, paddle moves, immediate hits and misses</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="intro-screen" data-intro-screen="2">
+          <p class="eyebrow">What to watch</p>
+          <h1>Learning is a loop</h1>
+          <p>
+            The important part is not the ball moving. Watch the lesson card. It shows what the agent saw, what it tried,
+            whether the result was useful, and how one memory value changed.
+          </p>
+          <div class="intro-steps">
+            <span>Observe</span>
+            <span>Act</span>
+            <span>Reward</span>
+            <span>Update</span>
+          </div>
+        </article>
+
+        <div class="intro-actions">
+          <button id="introBack" type="button">Back</button>
+          <button id="introSkip" type="button">Skip intro</button>
+          <button id="introNext" type="button">Next</button>
+        </div>
+      </div>
+    </section>
+
+    <main class="shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Reinforcement learning lab</p>
+          <h1>PongLearn</h1>
+          <p class="hero-copy">
+            A visual classroom for reinforcement learning: every rally becomes a small lesson the paddle can remember.
+          </p>
+        </div>
+        <div class="run-state" aria-live="polite">
+          <span class="pulse" id="runPulse"></span>
+          <span id="runState">Intro ready</span>
+        </div>
+      </section>
+
+      <nav class="lab-nav" aria-label="Experiment navigation">
+        <button type="button" data-scroll-target="experiment">Run</button>
+        <button type="button" data-scroll-target="guide">Screen Guide</button>
+        <button type="button" data-scroll-target="lesson">Lesson</button>
+        <button type="button" data-scroll-target="game">Game</button>
+        <button type="button" data-scroll-target="demo">Demo</button>
+        <button type="button" data-scroll-target="memory">Memory</button>
+      </nav>
+
+      <section class="experiment" id="experiment">
+        <div class="experiment-main">
+          <div class="panel-title">
+            <h2>Timed Learning Run</h2>
+            <span id="phaseName">Exploring</span>
+          </div>
+          <div class="progress-track" aria-label="Timed run progress">
+            <span id="runProgress"></span>
+          </div>
+          <div class="time-row">
+            <strong id="timeElapsed">0.0s</strong>
+            <span id="timeRemaining">60.0s remaining</span>
+          </div>
+          <p id="phaseText" class="explain-text">
+            Early moves are intentionally noisy so the agent can discover which paddle positions lead to hits.
+          </p>
+        </div>
+        <div class="experiment-actions">
+          <button id="toggleRun" type="button">Pause</button>
+          <button id="nextLesson" type="button">Next Lesson</button>
+          <button id="restartRun" type="button">Restart 60s</button>
+          <label>
+            Run length
+            <select id="durationControl">
+              <option value="30">30 seconds</option>
+              <option value="60" selected>60 seconds</option>
+              <option value="120">120 seconds</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <section class="demo-panel" id="demo">
+        <div>
+          <div class="panel-title">
+            <h2>After Training: Frozen Policy Demo</h2>
+            <span id="demoStatus">waiting for training</span>
+          </div>
+          <p id="demoText">
+            When the timer ends, PongLearn stops learning and lets the paddle play using only the values it learned.
+            That is the realistic test: no exploration, no memory updates, just the trained policy. If an exact state is
+            unfamiliar, the demo uses the learned tracking pattern as a simple generalization.
+          </p>
+        </div>
+        <div class="demo-metrics">
+          <div>
+            <span>Demo hit rate</span>
+            <strong id="demoHitRate">0%</strong>
+          </div>
+          <div>
+            <span>Return attempts</span>
+            <strong id="demoRallies">0</strong>
+          </div>
+          <div>
+            <span>Learning</span>
+            <strong id="demoLearningState">on</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen-guide" id="guide">
+        <div class="guide-card">
+          <h2>Run</h2>
+          <p>The timer is the experiment window. Guided pace holds on lessons; accelerated practice fills in extra experience between them.</p>
+          <span>AlphaGo link: repeated simulated games made learning measurable.</span>
+        </div>
+        <div class="guide-card">
+          <h2>Lesson</h2>
+          <p>This is the main teaching card. It translates one reward update into plain language.</p>
+          <span>AlphaGo link: reinforcement learning adjusts behavior after game outcomes.</span>
+        </div>
+        <div class="guide-card">
+          <h2>Game</h2>
+          <p>The Pong court shows what the learner currently sees: the ball, paddle, aim line, and selected action.</p>
+          <span>AlphaGo link: the board position is the state; a move is chosen from that state.</span>
+        </div>
+        <div class="guide-card">
+          <h2>Memory</h2>
+          <p>Action values, memory tiles, and the policy map show the agent's learned preferences.</p>
+          <span>AlphaGo link: policy estimates choose moves; value estimates judge positions.</span>
+        </div>
+      </section>
+
+      <section class="teaching-board" id="lesson">
+        <div class="lesson-panel">
+          <div class="panel-title">
+            <h2>Current Lesson</h2>
+            <span id="lessonType">first attempts</span>
+          </div>
+          <p id="lessonHeadline" class="lesson-headline">
+            The paddle starts with no memory. It has to try moves, get feedback, and keep the useful ones.
+          </p>
+          <div class="lesson-meter">
+            <span id="lessonBefore">0.00</span>
+            <i id="lessonDirection">waiting</i>
+            <span id="lessonAfter">0.00</span>
+          </div>
+          <p id="lessonReason" class="explain-text">
+            When the ball is missed, the action that led there becomes less attractive. When the ball is returned,
+            that action becomes more likely next time.
+          </p>
+        </div>
+
+        <div class="mastery-panel">
+          <div class="panel-title">
+            <h2>Mastery Path</h2>
+            <span id="masteryLevel">new learner</span>
+          </div>
+          <div class="mastery-path">
+            <div class="mastery-step active" data-step="1">
+              <strong>Guess</strong>
+              <span>tries moves</span>
+            </div>
+            <div class="mastery-step" data-step="2">
+              <strong>Notice</strong>
+              <span>spots useful hits</span>
+            </div>
+            <div class="mastery-step" data-step="3">
+              <strong>Prefer</strong>
+              <span>chooses better moves</span>
+            </div>
+            <div class="mastery-step" data-step="4">
+              <strong>Stabilize</strong>
+              <span>trusts memory</span>
+            </div>
+          </div>
+          <p id="masteryText" class="explain-text">
+            Mastery is not magic. It is many tiny value updates accumulating into a useful habit.
+          </p>
+        </div>
+      </section>
+
+      <section class="learning-loop" id="loop">
+        <div class="loop-card">
+          <span>1</span>
+          <h2>Observe</h2>
+          <p id="observeText">Waiting for the first state.</p>
+        </div>
+        <div class="loop-card">
+          <span>2</span>
+          <h2>Act</h2>
+          <p id="actText">The agent chooses up, hold, or down.</p>
+        </div>
+        <div class="loop-card">
+          <span>3</span>
+          <h2>Reward</h2>
+          <p id="rewardText">The environment scores the result.</p>
+        </div>
+        <div class="loop-card">
+          <span>4</span>
+          <h2>Update</h2>
+          <p id="updateText">That score changes one value in memory.</p>
+        </div>
+      </section>
+
+      <section class="workspace" id="game">
+        <div class="stage">
+          <div class="canvas-wrap">
+            <canvas id="gameCanvas" width="960" height="540" aria-label="Pong learning simulation"></canvas>
+            <div class="scorebar">
+              <span>Agent <strong id="agentScore">0</strong></span>
+              <span>Mentor <strong id="mentorScore">0</strong></span>
+            </div>
+          </div>
+          <div class="controls" aria-label="Simulation controls">
+            <label>
+              Classroom pace
+              <input id="speedControl" type="range" min="1" max="4" value="1" />
+              <span id="paceLabel" class="control-note">Guided: pauses after lessons</span>
+            </label>
+            <div class="boost-note">
+              <strong>Accelerated practice is on.</strong>
+              <span>The agent runs compressed practice between visible lessons, similar in spirit to AlphaGo using simulated play to improve faster.</span>
+            </div>
+            <label>
+              Exploration ceiling
+              <input id="exploreControl" type="range" min="0" max="100" value="100" />
+            </label>
+            <div class="legend" aria-label="Policy map legend">
+              <span><i class="swatch up"></i>Up</span>
+              <span><i class="swatch hold"></i>Hold</span>
+              <span><i class="swatch down"></i>Down</span>
+            </div>
+          </div>
+        </div>
+
+        <aside class="dashboard">
+          <div class="metric-grid">
+            <div class="metric">
+              <span>Episodes played</span>
+              <strong id="episodes">0</strong>
+            </div>
+            <div class="metric">
+              <span>Recent hit rate</span>
+              <strong id="hitRate">0%</strong>
+            </div>
+            <div class="metric">
+              <span>Exploration</span>
+              <strong id="epsilon">100%</strong>
+            </div>
+            <div class="metric">
+              <span>Learned states</span>
+              <strong id="states">0</strong>
+            </div>
+          </div>
+
+          <section class="panel improvement-panel">
+            <div class="panel-title">
+              <h2>Before And Now</h2>
+              <span id="improvementLabel">measuring</span>
+            </div>
+            <div class="before-now">
+              <div>
+                <span>Start</span>
+                <strong id="startHitRate">0%</strong>
+              </div>
+              <div>
+                <span>Now</span>
+                <strong id="nowHitRate">0%</strong>
+              </div>
+              <div>
+                <span>Change</span>
+                <strong id="hitRateChange">+0</strong>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" id="memory">
+            <div class="panel-title">
+              <h2>Action Values For This Moment</h2>
+              <span id="policyAction">Hold</span>
+            </div>
+            <div class="q-values" id="qValues"></div>
+            <p class="explain-text">
+              These are the three memories for the exact kind of moment happening now. The highest one becomes the habit.
+            </p>
+          </section>
+
+          <section class="panel">
+            <div class="panel-title">
+              <h2>Memory Built So Far</h2>
+              <span id="memorySummary">empty table</span>
+            </div>
+            <div id="memoryTiles" class="memory-tiles"></div>
+            <p class="explain-text">
+              Every tile is a situation the agent has personally experienced. Stronger color means stronger memory.
+            </p>
+          </section>
+
+          <section class="panel">
+            <div class="panel-title">
+              <h2>Policy Map</h2>
+              <span>incoming ball</span>
+            </div>
+            <canvas id="policyCanvas" width="360" height="220" aria-label="Policy heat map"></canvas>
+            <p class="explain-text">
+              Empty cells are situations the agent has not learned yet. Brighter cells mean stronger confidence.
+            </p>
+          </section>
+
+          <section class="panel">
+            <div class="panel-title">
+              <h2>Reward Trend</h2>
+              <span id="rewardNow">0.00</span>
+            </div>
+            <canvas id="rewardCanvas" width="360" height="150" aria-label="Recent reward trend"></canvas>
+          </section>
+        </aside>
+      </section>
+
+      <section class="event-section">
+        <div class="panel">
+          <div class="panel-title">
+            <h2>What Just Changed</h2>
+            <span>latest lessons</span>
+          </div>
+          <ol id="eventLog" class="event-log"></ol>
+        </div>
+        <div class="panel idea-panel" id="alpha">
+          <div class="panel-title">
+            <h2>DeepMind Principle</h2>
+            <span>adapted</span>
+          </div>
+          <p>
+            Silver et al. describe AlphaGo as combining policy networks that select moves, value networks that evaluate
+            positions, reinforcement learning from self-play, and search guided by those estimates. PongLearn is a
+            simplified teaching analogy: Pong states replace Go boards, paddle actions replace Go moves, and rewards
+            from hits or misses update visible action values.
+          </p>
+          <a href="https://www.nature.com/articles/nature16961" target="_blank" rel="noreferrer">
+            Source: Mastering the game of Go with deep neural networks and tree search
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="./src/app.js"></script>
+  </body>
+</html>
