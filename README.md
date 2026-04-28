@@ -4,6 +4,8 @@ PongLearn is a browser simulation of a reinforcement-learning agent learning Pon
 
 ![PongLearn educational reinforcement learning demo](docs/assets/ponglearn-demo.gif)
 
+The animation above is captured from the live Pong view: the learner paddle moves, the ball state changes, and the side panel shows the same moment's hit rate, exploration level, learned states, and action values.
+
 The app takes the transferable principle from DeepMind-style game learning: the system creates its own experience, receives reward from outcomes, updates a policy/value estimate, and gradually shifts from exploration to exploitation. For this repository, the first implementation uses tabular Q-learning instead of a neural network so the learning process is visible and inspectable in real time.
 
 The interface begins with a short educational walkthrough that explains what the simulation is, how it is inspired by DeepMind's AlphaGo work, and what to watch once the lab starts. After that, a viewer can run a 30, 60, or 120 second training session and watch the same loop repeat: observe the game state, choose an action, receive reward, and update one stored action value. The lesson card, mastery path, canvas annotations, memory tiles, event log, Q-value cards, and policy map are designed to make the learning process legible instead of hiding it behind a final score.
