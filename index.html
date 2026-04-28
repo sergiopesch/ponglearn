@@ -19,10 +19,7 @@
         <article class="intro-screen active" data-intro-screen="0">
           <p class="eyebrow">Educational simulation</p>
           <h1 id="introTitle">Before the paddle learns</h1>
-          <p>
-            This is a simulated experiment. You are about to watch a simple game become a classroom for one idea:
-            software can improve by trying actions, receiving feedback, and changing what it does next time.
-          </p>
+          <p>Watch one idea: try, get a score, remember what worked.</p>
           <div class="intro-visual">
             <span>Try</span>
             <i></i>
@@ -35,20 +32,15 @@
         <article class="intro-screen" data-intro-screen="1">
           <p class="eyebrow">Inspired by DeepMind</p>
           <h1>The principle behind AlphaGo</h1>
-          <p>
-            DeepMind's AlphaGo showed the power of learning from experience and reward. This project does not recreate
-            AlphaGo. It borrows the teaching principle in a smaller form: a Pong paddle builds a habit from repeated
-            attempts. The paper describes policy estimates for choosing moves, value estimates for judging positions,
-            reinforcement learning from self-play, and search guided by those estimates.
-          </p>
+          <p>AlphaGo used learned guesses, learned judgement, practice games, and search. PongLearn shows the same idea in miniature.</p>
           <div class="intro-compare">
             <div>
               <strong>AlphaGo</strong>
-              <span>complex board positions, move choices, long-term outcomes</span>
+              <span>Go board, move, win later</span>
             </div>
             <div>
               <strong>PongLearn</strong>
-              <span>ball position, paddle moves, immediate hits and misses</span>
+              <span>ball, paddle move, hit or miss</span>
             </div>
           </div>
         </article>
@@ -56,10 +48,7 @@
         <article class="intro-screen" data-intro-screen="2">
           <p class="eyebrow">What to watch</p>
           <h1>Learning is a loop</h1>
-          <p>
-            The important part is not the ball moving. Watch the lesson card. It shows what the agent saw, what it tried,
-            whether the result was useful, and how one memory value changed.
-          </p>
+          <p>Do not track everything. Watch the lesson card and one memory value.</p>
           <div class="intro-steps">
             <span>Observe</span>
             <span>Act</span>
@@ -81,9 +70,7 @@
         <div>
           <p class="eyebrow">Reinforcement learning lab</p>
           <h1>PongLearn</h1>
-          <p class="hero-copy">
-            A visual classroom for reinforcement learning: every rally becomes a small lesson the paddle can remember.
-          </p>
+          <p class="hero-copy">A paddle learns from hits and misses.</p>
         </div>
         <div class="run-state" aria-live="polite">
           <span class="pulse" id="runPulse"></span>
@@ -95,8 +82,8 @@
         <button type="button" data-scroll-target="experiment">Run</button>
         <button type="button" data-scroll-target="guide">Screen Guide</button>
         <button type="button" data-scroll-target="lesson">Lesson</button>
+        <button type="button" data-scroll-target="recall">Recall</button>
         <button type="button" data-scroll-target="game">Game</button>
-        <button type="button" data-scroll-target="demo">Demo</button>
         <button type="button" data-scroll-target="memory">Memory</button>
       </nav>
 
@@ -114,7 +101,7 @@
             <span id="timeRemaining">60.0s remaining</span>
           </div>
           <p id="phaseText" class="explain-text">
-            Early moves are intentionally noisy so the agent can discover which paddle positions lead to hits.
+            Early on, the paddle guesses a lot.
           </p>
         </div>
         <div class="experiment-actions">
@@ -139,9 +126,7 @@
             <span id="demoStatus">waiting for training</span>
           </div>
           <p id="demoText">
-            When the timer ends, PongLearn stops learning and lets the paddle play using only the values it learned.
-            That is the realistic test: no exploration, no memory updates, just the trained policy. If an exact state is
-            unfamiliar, the demo uses the learned tracking pattern as a simple generalization.
+            After training, memory locks. The paddle plays without new learning.
           </p>
         </div>
         <div class="demo-metrics">
@@ -162,24 +147,24 @@
 
       <section class="screen-guide" id="guide">
         <div class="guide-card">
-          <h2>Run</h2>
-          <p>The timer is the experiment window. Guided pace holds on lessons; accelerated practice fills in extra experience between them.</p>
-          <span>AlphaGo link: repeated simulated games made learning measurable.</span>
+          <h2>Practice</h2>
+          <p>Many quick games.</p>
+          <span>Paper idea: self-play creates data.</span>
         </div>
         <div class="guide-card">
-          <h2>Lesson</h2>
-          <p>This is the main teaching card. It translates one reward update into plain language.</p>
-          <span>AlphaGo link: reinforcement learning adjusts behavior after game outcomes.</span>
+          <h2>Feedback</h2>
+          <p>Hit good. Miss bad.</p>
+          <span>Paper idea: reward improves behavior.</span>
         </div>
         <div class="guide-card">
-          <h2>Game</h2>
-          <p>The Pong court shows what the learner currently sees: the ball, paddle, aim line, and selected action.</p>
-          <span>AlphaGo link: the board position is the state; a move is chosen from that state.</span>
+          <h2>Policy</h2>
+          <p>Pick the next move.</p>
+          <span>Paper idea: policy selects actions.</span>
         </div>
         <div class="guide-card">
-          <h2>Memory</h2>
-          <p>Action values, memory tiles, and the policy map show the agent's learned preferences.</p>
-          <span>AlphaGo link: policy estimates choose moves; value estimates judge positions.</span>
+          <h2>Value</h2>
+          <p>Judge what looks useful.</p>
+          <span>Paper idea: value estimates outcomes.</span>
         </div>
       </section>
 
@@ -190,7 +175,7 @@
             <span id="lessonType">first attempts</span>
           </div>
           <p id="lessonHeadline" class="lesson-headline">
-            The paddle starts with no memory. It has to try moves, get feedback, and keep the useful ones.
+            The paddle starts by guessing.
           </p>
           <div class="lesson-meter">
             <span id="lessonBefore">0.00</span>
@@ -198,8 +183,7 @@
             <span id="lessonAfter">0.00</span>
           </div>
           <p id="lessonReason" class="explain-text">
-            When the ball is missed, the action that led there becomes less attractive. When the ball is returned,
-            that action becomes more likely next time.
+            Good outcomes raise trust. Bad outcomes lower it.
           </p>
         </div>
 
@@ -227,31 +211,29 @@
             </div>
           </div>
           <p id="masteryText" class="explain-text">
-            Mastery is not magic. It is many tiny value updates accumulating into a useful habit.
+            Skill grows one update at a time.
           </p>
         </div>
-      </section>
 
-      <section class="learning-loop" id="loop">
-        <div class="loop-card">
-          <span>1</span>
-          <h2>Observe</h2>
-          <p id="observeText">Waiting for the first state.</p>
-        </div>
-        <div class="loop-card">
-          <span>2</span>
-          <h2>Act</h2>
-          <p id="actText">The agent chooses up, hold, or down.</p>
-        </div>
-        <div class="loop-card">
-          <span>3</span>
-          <h2>Reward</h2>
-          <p id="rewardText">The environment scores the result.</p>
-        </div>
-        <div class="loop-card">
-          <span>4</span>
-          <h2>Update</h2>
-          <p id="updateText">That score changes one value in memory.</p>
+        <div class="reflection-panel" id="recall">
+          <div class="panel-title">
+            <h2>Active Recall Check</h2>
+            <span id="predictionMode">predict</span>
+          </div>
+          <p id="predictionPrompt" class="prediction-prompt">
+            Which move should memory prefer now?
+          </p>
+          <div class="prediction-actions" aria-label="Predict the preferred paddle action">
+            <button type="button" data-predict-action="0">Up</button>
+            <button type="button" data-predict-action="1">Hold</button>
+            <button type="button" data-predict-action="2">Down</button>
+          </div>
+          <div class="confidence-track" aria-label="Policy confidence">
+            <span id="predictionConfidence"></span>
+          </div>
+          <p id="predictionFeedback" class="prediction-feedback">
+            Pick a move. Then compare it with memory.
+          </p>
         </div>
       </section>
 
@@ -271,8 +253,8 @@
               <span id="paceLabel" class="control-note">Guided: pauses after lessons</span>
             </label>
             <div class="boost-note">
-              <strong>Accelerated practice is on.</strong>
-              <span>The agent runs compressed practice between visible lessons, similar in spirit to AlphaGo using simulated play to improve faster.</span>
+              <strong>Fast practice</strong>
+              <span>Hidden reps between visible lessons.</span>
             </div>
             <label>
               Exploration ceiling
@@ -285,6 +267,29 @@
             </div>
           </div>
         </div>
+
+        <section class="learning-loop" id="loop">
+          <div class="loop-card">
+            <span>1</span>
+            <h2>Observe</h2>
+            <p id="observeText">Waiting for the first state.</p>
+          </div>
+          <div class="loop-card">
+            <span>2</span>
+            <h2>Act</h2>
+            <p id="actText">Choose a move.</p>
+          </div>
+          <div class="loop-card">
+            <span>3</span>
+            <h2>Reward</h2>
+            <p id="rewardText">Score the result.</p>
+          </div>
+          <div class="loop-card">
+            <span>4</span>
+            <h2>Update</h2>
+            <p id="updateText">Update memory.</p>
+          </div>
+        </section>
 
         <aside class="dashboard">
           <div class="metric-grid">
@@ -334,7 +339,7 @@
             </div>
             <div class="q-values" id="qValues"></div>
             <p class="explain-text">
-              These are the three memories for the exact kind of moment happening now. The highest one becomes the habit.
+              Highest value wins.
             </p>
           </section>
 
@@ -345,7 +350,7 @@
             </div>
             <div id="memoryTiles" class="memory-tiles"></div>
             <p class="explain-text">
-              Every tile is a situation the agent has personally experienced. Stronger color means stronger memory.
+              More color means stronger memory.
             </p>
           </section>
 
@@ -356,7 +361,7 @@
             </div>
             <canvas id="policyCanvas" width="360" height="220" aria-label="Policy heat map"></canvas>
             <p class="explain-text">
-              Empty cells are situations the agent has not learned yet. Brighter cells mean stronger confidence.
+              Blank means unseen. Bright means confident.
             </p>
           </section>
 
@@ -380,15 +385,15 @@
         </div>
         <div class="panel idea-panel" id="alpha">
           <div class="panel-title">
-            <h2>DeepMind Principle</h2>
-            <span>adapted</span>
+            <h2>AlphaGo, Distilled</h2>
+            <span>paper map</span>
           </div>
-          <p>
-            Silver et al. describe AlphaGo as combining policy networks that select moves, value networks that evaluate
-            positions, reinforcement learning from self-play, and search guided by those estimates. PongLearn is a
-            simplified teaching analogy: Pong states replace Go boards, paddle actions replace Go moves, and rewards
-            from hits or misses update visible action values.
-          </p>
+          <div class="paper-map" aria-label="AlphaGo ideas adapted for PongLearn">
+            <span><strong>Policy</strong> pick a move</span>
+            <span><strong>Value</strong> judge the moment</span>
+            <span><strong>Practice</strong> learn from play</span>
+            <span><strong>Search</strong> look ahead</span>
+          </div>
           <a href="https://www.nature.com/articles/nature16961" target="_blank" rel="noreferrer">
             Source: Mastering the game of Go with deep neural networks and tree search
           </a>

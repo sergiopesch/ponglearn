@@ -1,0 +1,12 @@
+node_modules/
+coverage/
+.DS_Store
+*.log
+
+# Local visual review artifacts.
+*-desktop*.png
+*-mobile*.png
+*-intro*.png
+grouped-*.png
+pona-*.png
+ponglearn-*.png

@@ -12,7 +12,7 @@ import {
 const PACE_CONFIGS = [
   {
     name: "Guided",
-    note: "Guided: pauses after lessons",
+    note: "Guided: lesson pauses",
     stepsPerTick: 1,
     tickMs: 120,
     holdMs: 2200,
@@ -20,7 +20,7 @@ const PACE_CONFIGS = [
   },
   {
     name: "Steady",
-    note: "Steady: slow enough to follow",
+    note: "Steady: readable",
     stepsPerTick: 1,
     tickMs: 55,
     holdMs: 1400,
@@ -36,7 +36,7 @@ const PACE_CONFIGS = [
   },
   {
     name: "Fast train",
-    note: "Fast train: learn quickly",
+    note: "Fast: learn quickly",
     stepsPerTick: 18,
     tickMs: 16,
     holdMs: 150,
@@ -46,16 +46,16 @@ const PACE_CONFIGS = [
 const DEFAULT_RUN_SECONDS = 60;
 const DEMO_STEPS_PER_TICK = 6;
 const COLORS = {
-  background: "#090908",
-  court: "#24221f",
-  line: "rgba(244,239,228,0.18)",
-  text: "#f4efe4",
-  muted: "rgba(244,239,228,0.58)",
-  green: "#8fd14f",
-  agent: "#8fd14f",
-  mentor: "#ee6d56",
-  ball: "#f1b84b",
-  cyan: "#72d5df",
+  background: "#090c0d",
+  court: "#1d2425",
+  line: "rgba(246,242,232,0.18)",
+  text: "#f6f2e8",
+  muted: "rgba(246,242,232,0.62)",
+  green: "#9bd85f",
+  agent: "#9bd85f",
+  mentor: "#ff705f",
+  ball: "#ffd166",
+  cyan: "#66d9e8",
 };
 
 let training = createTrainingState();
@@ -70,6 +70,7 @@ let lessonHoldUntil = 0;
 let lastLessonCount = 0;
 let focusedLessonStep = null;
 let introIndex = 0;
+let activePrediction = null;
 
 const gameCanvas = document.querySelector("#gameCanvas");
 const gameCtx = gameCanvas.getContext("2d");
@@ -129,9 +130,16 @@ const els = {
   lessonDirection: document.querySelector("#lessonDirection"),
   lessonAfter: document.querySelector("#lessonAfter"),
   lessonReason: document.querySelector("#lessonReason"),
+  lessonPanel: document.querySelector(".lesson-panel"),
   masteryLevel: document.querySelector("#masteryLevel"),
   masteryText: document.querySelector("#masteryText"),
   masterySteps: [...document.querySelectorAll(".mastery-step")],
+  predictionMode: document.querySelector("#predictionMode"),
+  predictionPrompt: document.querySelector("#predictionPrompt"),
+  predictionFeedback: document.querySelector("#predictionFeedback"),
+  predictionButtons: [...document.querySelectorAll("[data-predict-action]")],
+  predictionConfidence: document.querySelector("#predictionConfidence"),
+  reflectionPanel: document.querySelector(".reflection-panel"),
   memorySummary: document.querySelector("#memorySummary"),
   memoryTiles: document.querySelector("#memoryTiles"),
 };
@@ -202,6 +210,17 @@ if (new URLSearchParams(window.location.search).get("intro") === "0") {
 els.exploreControl.addEventListener("input", () => {
   epsilonScale = Number(els.exploreControl.value) / 100;
   syncExploration();
+});
+
+els.predictionButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    if (!activePrediction) {
+      return;
+    }
+
+    activePrediction.selectedAction = Number(button.dataset.predictAction);
+    renderPredictionFeedback();
+  });
 });
 
 function syncExploration() {
@@ -419,7 +438,7 @@ function drawTrajectory(env, scaleX, scaleY) {
     projectedY = period - projectedY;
   }
 
-  gameCtx.strokeStyle = "rgba(114, 213, 223, 0.34)";
+  gameCtx.strokeStyle = "rgba(102, 217, 232, 0.34)";
   gameCtx.lineWidth = 2;
   gameCtx.beginPath();
   gameCtx.moveTo(env.ball.x * scaleX, env.ball.y * scaleY);
@@ -435,14 +454,14 @@ function drawTeachingOverlay(env, scaleX, scaleY) {
   const ballY = env.ball.y * scaleY;
   const targetY = projectIncomingY(env) * scaleY;
 
-  gameCtx.strokeStyle = "rgba(143, 209, 79, 0.24)";
+  gameCtx.strokeStyle = "rgba(155, 216, 95, 0.24)";
   gameCtx.lineWidth = 2;
   gameCtx.beginPath();
   gameCtx.moveTo(paddleX + 18, paddleY);
   gameCtx.lineTo(ballX, ballY);
   gameCtx.stroke();
 
-  gameCtx.strokeStyle = "rgba(241, 184, 75, 0.48)";
+  gameCtx.strokeStyle = "rgba(255, 209, 102, 0.48)";
   gameCtx.setLineDash([7, 7]);
   gameCtx.beginPath();
   gameCtx.moveTo(paddleX - 24, targetY);
@@ -509,12 +528,12 @@ function drawBadge(x, y, text, tone) {
   gameCtx.font = "700 15px system-ui, sans-serif";
   const width = gameCtx.measureText(text).width + 22;
   const palette = {
-    green: "rgba(143, 209, 79, 0.18)",
-    amber: "rgba(241, 184, 75, 0.18)",
-    cyan: "rgba(114, 213, 223, 0.18)",
+    green: "rgba(155, 216, 95, 0.18)",
+    amber: "rgba(255, 209, 102, 0.18)",
+    cyan: "rgba(102, 217, 232, 0.18)",
   };
-  gameCtx.fillStyle = palette[tone] ?? "rgba(244, 239, 228, 0.14)";
-  gameCtx.strokeStyle = "rgba(244, 239, 228, 0.22)";
+  gameCtx.fillStyle = palette[tone] ?? "rgba(246, 242, 232, 0.14)";
+  gameCtx.strokeStyle = "rgba(246, 242, 232, 0.22)";
   gameCtx.lineWidth = 1;
   gameCtx.fillRect(x, y, width, 30);
   gameCtx.strokeRect(x, y, width, 30);
@@ -528,7 +547,7 @@ function drawPolicyMap() {
   const cellW = policyCanvas.width / 9;
   const cellH = policyCanvas.height / 10;
 
-  policyCtx.fillStyle = "#11100f";
+  policyCtx.fillStyle = COLORS.background;
   policyCtx.fillRect(0, 0, policyCanvas.width, policyCanvas.height);
 
   for (let y = 0; y < 10; y += 1) {
@@ -543,7 +562,7 @@ function drawPolicyMap() {
       });
       const values = agent.peekActionValues(key);
       if (!values) {
-        policyCtx.fillStyle = "rgba(244,239,228,0.035)";
+        policyCtx.fillStyle = "rgba(246,242,232,0.035)";
         policyCtx.fillRect(delta * cellW + 1, y * cellH + 1, cellW - 2, cellH - 2);
         continue;
       }
@@ -554,7 +573,7 @@ function drawPolicyMap() {
     }
   }
 
-  policyCtx.strokeStyle = "rgba(244,239,228,0.18)";
+  policyCtx.strokeStyle = "rgba(246,242,232,0.18)";
   policyCtx.lineWidth = 1;
   for (let x = 1; x < 9; x += 1) {
     policyCtx.beginPath();
@@ -567,20 +586,20 @@ function drawPolicyMap() {
 function actionColor(action, confidence) {
   const alpha = 0.18 + confidence * 0.72;
   if (action === 0) {
-    return `rgba(143, 209, 79, ${alpha})`;
+    return `rgba(155, 216, 95, ${alpha})`;
   }
   if (action === 1) {
-    return `rgba(241, 184, 75, ${alpha})`;
+    return `rgba(255, 209, 102, ${alpha})`;
   }
-  return `rgba(114, 213, 223, ${alpha})`;
+  return `rgba(102, 217, 232, ${alpha})`;
 }
 
 function drawRewards() {
   const values = training.stats.rewardWindow;
-  rewardCtx.fillStyle = "#11100f";
+  rewardCtx.fillStyle = COLORS.background;
   rewardCtx.fillRect(0, 0, rewardCanvas.width, rewardCanvas.height);
 
-  rewardCtx.strokeStyle = "rgba(244,239,228,0.16)";
+  rewardCtx.strokeStyle = "rgba(246,242,232,0.16)";
   rewardCtx.beginPath();
   rewardCtx.moveTo(0, rewardCanvas.height / 2);
   rewardCtx.lineTo(rewardCanvas.width, rewardCanvas.height / 2);
@@ -622,6 +641,11 @@ function updateReadouts() {
   const readingLesson = isReadingLesson();
   const hitRateChange = hitRate - experiment.startHitRate;
   const visibleStep = getVisibleStep();
+  const predictionStep = visibleStep ?? { state, actionIndex: action, actionMode: "policy", reward: stats.lastReward };
+  const predictionValues =
+    predictionStep.actionMode === "frozen-policy"
+      ? predictionStep.values ?? agent.peekActionValues(predictionStep.state.key) ?? [0, 0, 0]
+      : agent.peekActionValues(predictionStep.state.key) ?? values;
 
   els.agentScore.textContent = env.agentScore.toString();
   els.mentorScore.textContent = env.mentorScore.toString();
@@ -640,9 +664,9 @@ function updateReadouts() {
   els.phaseName.textContent = appMode === "demo" ? "Policy demo" : readingLesson ? "Reading lesson" : phase.name;
   els.phaseText.textContent =
     appMode === "demo"
-      ? "Training is frozen. The paddle is now playing with the policy it learned during the run."
+      ? "Memory is locked. Watch what it learned."
       : readingLesson
-        ? "The game is briefly holding still so the lesson card can explain what just changed in memory."
+        ? "Paused on one memory update."
         : phase.text;
   els.runState.textContent = getRunStateLabel(readingLesson ? "Reading lesson" : phase.name);
   els.policyAction.textContent = ACTION_NAMES[action];
@@ -651,8 +675,8 @@ function updateReadouts() {
   els.demoStatus.textContent = appMode === "demo" ? "policy playing" : "waiting for training";
   els.demoText.textContent =
     appMode === "demo"
-      ? "The Q-table is locked. The paddle is no longer allowed to explore or update memory. It uses high-confidence learned values first, then a simple learned tracking fallback for unfamiliar states."
-      : "When the timer ends, PongLearn stops learning and lets the paddle play using only the values it learned. That is the realistic test: no exploration, no memory updates, just the trained policy.";
+      ? "Memory locked. No guessing. No updates."
+      : "After training, memory locks. Then we test it.";
   els.demoHitRate.textContent = formatPercent(demoHitRate);
   els.demoRallies.textContent = (demoStats.hits + demoStats.misses).toLocaleString();
   els.demoLearningState.textContent = appMode === "demo" ? "off" : "on";
@@ -668,6 +692,7 @@ function updateReadouts() {
 
   updateLearningLoop(visibleStep);
   updateLesson(visibleStep);
+  updatePredictionCheck(predictionStep, predictionValues);
   updateMastery(hitRate, agent.epsilon, agent.qTable.size);
   updateMemoryTiles(agent);
   updateEventLog(stats.events);
@@ -685,24 +710,24 @@ function getPhase(progress, completed) {
   if (completed) {
     return {
       name: "Review",
-      text: "The timed run is complete. Compare the start and current hit rate to judge what the agent learned.",
+      text: "Training finished. Compare start and now.",
     };
   }
   if (progress < 0.25) {
     return {
       name: "Exploring",
-      text: "Early moves are intentionally noisy so the agent can discover which paddle positions lead to hits.",
+      text: "Early on, the paddle guesses a lot.",
     };
   }
   if (progress < 0.7) {
     return {
       name: "Updating",
-      text: "Hits raise action values and misses lower them. The policy map starts filling with earned decisions.",
+      text: "Hits raise values. Misses lower them.",
     };
   }
   return {
     name: "Exploiting",
-    text: "Exploration is lower now, so the paddle increasingly follows the best values it has learned so far.",
+    text: "The paddle trusts memory more now.",
   };
 }
 
@@ -731,24 +756,23 @@ function updateLearningLoop(step) {
     return;
   }
 
-  const ballDirection = step.state.velocityX === 0 ? "toward the agent" : "away from the agent";
-  const verticalOffset = step.state.deltaY < 4 ? "above" : step.state.deltaY > 4 ? "below" : "level with";
+  const ballDirection = step.state.velocityX === 0 ? "incoming" : "leaving";
+  const verticalOffset = step.state.deltaY < 4 ? "above" : step.state.deltaY > 4 ? "below" : "level";
   const actionName = ACTION_NAMES[step.actionIndex].toLowerCase();
   const mode =
     step.actionMode === "frozen-policy"
-      ? "using frozen training"
+      ? "locked policy"
       : step.actionMode === "explore"
-        ? "testing a random move"
-        : "following its best known value";
-  const rewardDirection = step.reward >= 0 ? "positive" : "negative";
+        ? "guess"
+        : "memory";
 
-  els.observeText.textContent = `Ball is ${ballDirection} and ${verticalOffset} the paddle in state ${step.state.key}.`;
-  els.actText.textContent = `It moves ${actionName} while ${mode}.`;
-  els.rewardText.textContent = `The result is a ${rewardDirection} reward of ${step.reward.toFixed(3)}.`;
+  els.observeText.textContent = `${ballDirection}; ball ${verticalOffset}.`;
+  els.actText.textContent = `${ACTION_NAMES[step.actionIndex]} (${mode}).`;
+  els.rewardText.textContent = `Reward ${formatSignedNumber(step.reward)}.`;
   if (step.actionMode === "frozen-policy") {
-    els.updateText.textContent = `No Q-value changes. The policy is locked and only being evaluated.`;
+    els.updateText.textContent = `No update.`;
   } else {
-    els.updateText.textContent = `Q(${ACTION_NAMES[step.actionIndex]}) changed from ${formatQ(step.update.oldValue)} to ${formatQ(step.update.updatedValue)}.`;
+    els.updateText.textContent = `${formatQ(step.update.oldValue)} -> ${formatQ(step.update.updatedValue)}.`;
   }
 }
 
@@ -758,16 +782,20 @@ function updateLesson(step) {
   }
 
   const actionName = ACTION_NAMES[step.actionIndex];
+  const tone = lessonToneForEvent(step.event, step.actionMode);
+  els.lessonPanel.classList.remove("lesson-success", "lesson-mistake", "lesson-demo", "lesson-neutral");
+  els.lessonPanel.classList.add(tone);
+
   if (step.actionMode === "frozen-policy") {
     const value = step.values?.[step.actionIndex] ?? 0;
-    els.lessonType.textContent = "policy demonstration";
-    els.lessonHeadline.textContent = `${actionName} was selected by the trained policy, not by random exploration.`;
+    els.lessonType.textContent = "demo";
+    els.lessonHeadline.textContent = `Memory chose ${actionName}.`;
     els.lessonBefore.textContent = formatQ(value);
     els.lessonAfter.textContent = formatQ(value);
-    els.lessonDirection.textContent = "memory locked";
+    els.lessonDirection.textContent = "locked";
     els.lessonDirection.className = "positive";
     els.lessonReason.textContent =
-      "This is the post-training test. Like evaluating a trained model, the system is not learning now; it is showing how the learned policy behaves when deployed.";
+      "Learning is off. This is the test.";
     return;
   }
 
@@ -779,9 +807,110 @@ function updateLesson(step) {
   els.lessonHeadline.textContent = eventCopy.headline;
   els.lessonBefore.textContent = formatQ(step.update.oldValue);
   els.lessonAfter.textContent = formatQ(step.update.updatedValue);
-  els.lessonDirection.textContent = positive ? "memory strengthened" : "memory weakened";
+  els.lessonDirection.textContent = positive ? "trust up" : "trust down";
   els.lessonDirection.className = positive ? "positive" : "negative";
   els.lessonReason.textContent = eventCopy.reason;
+}
+
+function lessonToneForEvent(event, actionMode) {
+  if (actionMode === "frozen-policy") {
+    return "lesson-demo";
+  }
+  if (event === "agent-hit" || event === "mentor-miss") {
+    return "lesson-success";
+  }
+  if (event === "agent-miss") {
+    return "lesson-mistake";
+  }
+  return "lesson-neutral";
+}
+
+function updatePredictionCheck(step, values) {
+  if (!step) {
+    return;
+  }
+
+  const targetAction = bestActionIndex(values, () => 0);
+  const confidence = confidenceFromValues(values);
+  const samePrompt = activePrediction?.stateKey === step.state.key && activePrediction?.targetAction === targetAction;
+
+  if (!samePrompt) {
+    activePrediction = {
+      stateKey: step.state.key,
+      targetAction,
+      selectedAction: null,
+      confidence,
+      actionMode: step.actionMode,
+      relativePosition: relativeBallPosition(step.state.deltaY),
+    };
+  } else {
+    activePrediction.confidence = confidence;
+    activePrediction.actionMode = step.actionMode;
+    activePrediction.relativePosition = relativeBallPosition(step.state.deltaY);
+  }
+
+  els.predictionMode.textContent = step.actionMode === "frozen-policy" ? "demo policy" : "memory check";
+  els.predictionPrompt.textContent = `Ball ${activePrediction.relativePosition}. What should memory choose?`;
+  els.predictionConfidence.style.width = `${Math.round(confidence * 100)}%`;
+  els.reflectionPanel.classList.toggle("high-confidence", confidence >= 0.55);
+
+  renderPredictionFeedback();
+}
+
+function renderPredictionFeedback() {
+  if (!activePrediction) {
+    return;
+  }
+
+  const targetName = ACTION_NAMES[activePrediction.targetAction];
+  const selected = activePrediction.selectedAction;
+  const confidenceLabel =
+    activePrediction.confidence >= 0.55
+      ? "strong"
+      : activePrediction.confidence >= 0.25
+        ? "emerging"
+        : "weak";
+
+  els.predictionButtons.forEach((button) => {
+    const action = Number(button.dataset.predictAction);
+    button.classList.toggle("selected", action === selected);
+    button.classList.toggle("correct", selected !== null && action === activePrediction.targetAction);
+    button.classList.toggle("missed", selected === action && selected !== activePrediction.targetAction);
+  });
+
+  if (selected === null) {
+    els.predictionFeedback.textContent = `Confidence: ${confidenceLabel}. Pick one.`;
+    return;
+  }
+
+  if (selected === activePrediction.targetAction) {
+    els.predictionFeedback.textContent = `Correct: ${targetName}. Confidence: ${confidenceLabel}.`;
+  } else {
+    els.predictionFeedback.textContent = `Memory says ${targetName}.`;
+  }
+}
+
+function confidenceFromValues(values) {
+  const sorted = [...values].sort((a, b) => b - a);
+  const margin = Math.abs(sorted[0] - sorted[1]);
+  const strength = Math.max(...values.map(Math.abs));
+  return clamp((margin + strength * 0.35) / 2.4, 0, 1);
+}
+
+function relativeBallPosition(deltaY) {
+  if (deltaY < 3) {
+    return "well above";
+  }
+  if (deltaY < 4) {
+    return "slightly above";
+  }
+  if (deltaY > 5) {
+    return "well below";
+  }
+  if (deltaY > 4) {
+    return "slightly below";
+  }
+  return "level with";
 }
 
 function getVisibleStep() {
@@ -789,33 +918,33 @@ function getVisibleStep() {
 }
 
 function lessonCopyForEvent(event, actionName, actionMode) {
-  const modeText = actionMode === "explore" ? "a trial move" : "a remembered move";
+  const modeText = actionMode === "explore" ? "guessed" : "remembered";
 
   if (event === "agent-hit") {
     return {
-      type: "successful return",
-      headline: `${actionName} worked here, so the agent makes that choice more attractive for similar moments.`,
-      reason: `This is how skill forms: a useful action gets a positive reward, then the memory for that action rises.`,
+      type: "hit",
+      headline: `${actionName} worked.`,
+      reason: `Reward raised this memory.`,
     };
   }
   if (event === "agent-miss") {
     return {
-      type: "mistake noticed",
-      headline: `${actionName} failed in this situation, so the agent lowers trust in that choice.`,
-      reason: `A miss is useful information. It tells the paddle which move not to repeat when the ball looks like this again.`,
+      type: "miss",
+      headline: `${actionName} missed.`,
+      reason: `Reward lowered this memory.`,
     };
   }
   if (event === "mentor-miss") {
     return {
-      type: "rally won",
-      headline: `${actionName} helped keep the rally alive long enough to score.`,
-      reason: `Winning a rally gives a strong positive reward because earlier choices led to a good outcome.`,
+      type: "point",
+      headline: `${actionName} helped win.`,
+      reason: `This path was useful.`,
     };
   }
   return {
-    type: actionMode === "explore" ? "experimenting" : "using memory",
-    headline: `The paddle chose ${actionName} as ${modeText} and received immediate feedback.`,
-    reason: `Small feedback during the rally nudges the value up or down before the final hit or miss happens.`,
+    type: actionMode === "explore" ? "guessing" : "using memory",
+    headline: `${actionName} was ${modeText}.`,
+    reason: `Small score. Small update.`,
   };
 }
 
@@ -834,27 +963,27 @@ function getMasteryLevel(hitRate, epsilon, learnedStates) {
     return {
       step: 4,
       label: "stable habit",
-      text: "The agent is mostly trusting memory now. It has learned enough situations to return the ball consistently.",
+      text: "Mostly memory now.",
     };
   }
   if (hitRate >= 0.45 || learnedStates > 550) {
     return {
       step: 3,
       label: "forming preferences",
-      text: "The paddle has seen enough examples that some moves are becoming clear favorites.",
+      text: "Some moves stand out.",
     };
   }
   if (learnedStates > 120 || hitRate >= 0.2) {
     return {
       step: 2,
       label: "noticing patterns",
-      text: "The memory table is filling in. The agent is starting to separate helpful moves from bad guesses.",
+      text: "Useful moves are emerging.",
     };
   }
   return {
     step: 1,
     label: "new learner",
-    text: "Most choices are still guesses. That is intentional: the agent needs mistakes before it can learn from them.",
+    text: "Mostly guessing.",
   };
 }
 
@@ -898,7 +1027,7 @@ function updateEventLog(events) {
       const actionName = ACTION_NAMES[event.actionIndex];
       item.innerHTML = `
         <span>Episode ${event.episode}</span>
-        <p><strong>${eventLabel(event.event)}</strong> after ${actionName.toLowerCase()} (${event.actionMode}). Reward ${event.reward.toFixed(2)} moved value ${formatQ(event.oldValue)} -> ${formatQ(event.updatedValue)}.</p>
+        <p><strong>${eventLabel(event.event)}</strong> ${actionName}. ${formatSignedNumber(event.reward)} | ${formatQ(event.oldValue)} -> ${formatQ(event.updatedValue)}</p>
       `;
       return item;
     }),
@@ -907,7 +1036,7 @@ function updateEventLog(events) {
 
 function emptyEvent() {
   const item = document.createElement("li");
-  item.innerHTML = "<span>Episode 0</span><p>Training has started. The first hit or miss will appear here.</p>";
+  item.innerHTML = "<span>Episode 0</span><p>Waiting for first lesson.</p>";
   return item;
 }
 
@@ -934,6 +1063,10 @@ function formatPercent(value) {
 function formatSignedPercent(value) {
   const rounded = Math.round(value * 100);
   return `${rounded >= 0 ? "+" : ""}${rounded} pts`;
+}
+
+function formatSignedNumber(value) {
+  return `${value >= 0 ? "+" : ""}${value.toFixed(2)}`;
 }
 
 function formatQ(value) {

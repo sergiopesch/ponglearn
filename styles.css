@@ -1,16 +1,20 @@
 :root {
   color-scheme: dark;
-  --bg: #11100f;
-  --surface: #1a1917;
-  --surface-2: #24221f;
-  --line: #38342f;
-  --text: #f4efe4;
-  --muted: #a9a197;
-  --green: #8fd14f;
-  --amber: #f1b84b;
-  --coral: #ee6d56;
-  --cyan: #72d5df;
+  --bg: #0b0d0e;
+  --surface: #15191a;
+  --surface-2: #1d2425;
+  --line: #344046;
+  --line-soft: rgba(246, 242, 232, 0.1);
+  --text: #f6f2e8;
+  --muted: #b2beb9;
+  --green: #9bd85f;
+  --amber: #ffd166;
+  --coral: #ff705f;
+  --cyan: #66d9e8;
+  --blue: #8fb3ff;
   --ink: #0b0b0a;
+  --radius: 8px;
+  --shadow: 0 18px 48px rgba(0, 0, 0, 0.24);
 }
 
 * {
@@ -24,7 +28,11 @@
 body {
   margin: 0;
   min-width: 320px;
-  background: var(--bg);
+  background:
+    linear-gradient(rgba(246, 242, 232, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(246, 242, 232, 0.018) 1px, transparent 1px),
+    var(--bg);
+  background-size: 44px 44px, 44px 44px, auto;
   color: var(--text);
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
@@ -192,6 +200,8 @@ select {
   width: min(1480px, calc(100vw - 32px));
   margin: 0 auto;
   padding: 24px 0 36px;
+  display: flex;
+  flex-direction: column;
 }
 
 .hero {
@@ -275,10 +285,15 @@ h2 {
 }
 
 .workspace {
+  order: 3;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(330px, 420px);
-  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 370px);
+  grid-template-areas:
+    "stage dashboard"
+    "loop dashboard";
+  gap: 14px;
   align-items: start;
+  margin-bottom: 14px;
 }
 
 .stage,
@@ -287,12 +302,16 @@ h2 {
 .experiment,
 .lesson-panel,
 .mastery-panel,
+.reflection-panel,
 .loop-card {
   border: 1px solid var(--line);
   background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
 }
 
 .experiment {
+  order: 6;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
   gap: 18px;
@@ -302,6 +321,7 @@ h2 {
 }
 
 .demo-panel {
+  order: 7;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(320px, 0.8fr);
   gap: 16px;
@@ -397,18 +417,20 @@ h2 {
 
 .stage {
   min-width: 0;
+  grid-area: stage;
 }
 
 .screen-guide {
+  order: 5;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
-  margin-bottom: 18px;
+  gap: 10px;
+  margin-bottom: 14px;
 }
 
 .guide-card {
-  min-height: 178px;
-  padding: 16px;
+  min-height: 116px;
+  padding: 14px;
   border: 1px solid var(--line);
   background: var(--surface);
 }
@@ -431,14 +453,16 @@ h2 {
 }
 
 .teaching-board {
+  order: 8;
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.9fr);
+  grid-template-columns: minmax(0, 1.08fr) minmax(340px, 0.82fr) minmax(300px, 0.62fr);
   gap: 14px;
   margin-bottom: 18px;
 }
 
 .lesson-panel,
-.mastery-panel {
+.mastery-panel,
+.reflection-panel {
   padding: 18px;
 }
 
@@ -647,9 +671,57 @@ select {
 }
 
 .dashboard {
+  grid-area: dashboard;
+  position: relative;
   display: grid;
   gap: 14px;
+  align-self: start;
+  max-height: calc(100vh - 300px);
+  overflow: auto;
   padding: 14px;
+}
+
+.dashboard::before,
+.stage::before,
+.experiment::before,
+.demo-panel::before,
+.teaching-board::before,
+.event-section::before {
+  display: block;
+  width: fit-content;
+  padding: 5px 8px;
+  border: 1px solid var(--line-soft);
+  border-radius: 999px;
+  background: rgba(246, 242, 232, 0.04);
+  color: var(--amber);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.dashboard::before {
+  content: "Run + Memory";
+}
+
+.stage::before {
+  content: "Game";
+  margin: 12px 12px 0;
+}
+
+.experiment::before {
+  content: "Run";
+  grid-column: 1 / -1;
+}
+
+.demo-panel::before {
+  content: "Run test";
+  grid-column: 1 / -1;
+}
+
+.teaching-board::before {
+  content: "Lesson + Recall";
+  grid-column: 1 / -1;
 }
 
 .metric-grid {
@@ -805,10 +877,11 @@ select {
 }
 
 .learning-loop {
+  grid-area: loop;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
-  margin: 0 0 18px;
+  margin: 0;
 }
 
 .loop-card {
@@ -833,7 +906,6 @@ select {
 }
 
 .loop-card p,
-.idea-panel p,
 .idea-panel a {
   color: var(--muted);
   line-height: 1.5;
@@ -846,7 +918,30 @@ select {
   color: var(--amber);
 }
 
+.paper-map {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.paper-map span {
+  min-height: 72px;
+  display: grid;
+  align-content: center;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  background: #101314;
+  color: var(--muted);
+}
+
+.paper-map strong {
+  color: var(--text);
+}
+
 .event-section {
+  order: 9;
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
   gap: 14px;
@@ -887,6 +982,299 @@ select {
   line-height: 1.35;
 }
 
+.intro-card,
+.lab-nav,
+.demo-panel,
+.guide-card,
+.demo-metrics div,
+.metric,
+.q-card,
+.before-now div,
+.memory-tiles,
+.event-log li,
+.intro-visual span,
+.intro-steps span,
+.intro-compare div,
+.lesson-meter span,
+.lesson-meter i,
+.mastery-step {
+  border-radius: var(--radius);
+}
+
+.hero {
+  min-height: 132px;
+}
+
+.hero h1 {
+  text-wrap: balance;
+}
+
+.lab-nav {
+  backdrop-filter: blur(14px);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.2);
+}
+
+.lab-nav button,
+.intro-actions button,
+.experiment-actions button,
+.prediction-actions button {
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 209, 102, 0.58);
+}
+
+button:focus-visible,
+select:focus-visible,
+input[type="range"]:focus-visible {
+  outline: 3px solid rgba(102, 217, 232, 0.55);
+  outline-offset: 3px;
+}
+
+.progress-track,
+#policyCanvas,
+#rewardCanvas,
+.memory-tiles,
+select,
+.lesson-meter span,
+.lesson-meter i {
+  border-color: var(--line-soft);
+}
+
+.progress-track {
+  overflow: hidden;
+}
+
+.progress-track span {
+  background-size: 180% 100%;
+  animation: progress-flow 3.8s linear infinite;
+}
+
+.pulse {
+  animation: status-pulse 1.6s ease-in-out infinite;
+}
+
+.pulse.paused {
+  animation: none;
+}
+
+.guide-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.guide-card::before,
+.reflection-panel::before,
+.lesson-panel::before {
+  content: "";
+  display: block;
+  width: 42px;
+  height: 4px;
+  margin-bottom: 14px;
+  border-radius: 999px;
+  background: var(--amber);
+}
+
+.guide-card:nth-child(2)::before {
+  background: var(--green);
+}
+
+.guide-card:nth-child(3)::before {
+  background: var(--cyan);
+}
+
+.guide-card:nth-child(4)::before {
+  background: var(--blue);
+}
+
+.lesson-panel {
+  position: relative;
+  overflow: hidden;
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.lesson-panel::before {
+  background: var(--amber);
+}
+
+.lesson-panel.lesson-success {
+  border-color: rgba(155, 216, 95, 0.72);
+  background: linear-gradient(180deg, rgba(155, 216, 95, 0.08), rgba(21, 25, 26, 0.98));
+}
+
+.lesson-panel.lesson-success::before {
+  background: var(--green);
+}
+
+.lesson-panel.lesson-mistake {
+  border-color: rgba(255, 112, 95, 0.72);
+  background: linear-gradient(180deg, rgba(255, 112, 95, 0.08), rgba(21, 25, 26, 0.98));
+}
+
+.lesson-panel.lesson-mistake::before {
+  background: var(--coral);
+}
+
+.lesson-panel.lesson-demo {
+  border-color: rgba(102, 217, 232, 0.72);
+  background: linear-gradient(180deg, rgba(102, 217, 232, 0.08), rgba(21, 25, 26, 0.98));
+}
+
+.lesson-panel.lesson-demo::before {
+  background: var(--cyan);
+}
+
+.reflection-panel {
+  display: grid;
+  align-content: start;
+}
+
+.reflection-panel::before {
+  background: var(--blue);
+}
+
+.prediction-prompt {
+  color: var(--text);
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.prediction-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.prediction-actions button {
+  min-height: 48px;
+  background: #101314;
+  color: var(--text);
+}
+
+.prediction-actions button.selected {
+  border-color: var(--amber);
+  background: rgba(255, 209, 102, 0.12);
+}
+
+.prediction-actions button.correct {
+  border-color: var(--green);
+  background: rgba(155, 216, 95, 0.14);
+  color: var(--text);
+}
+
+.prediction-actions button.missed {
+  border-color: var(--coral);
+  background: rgba(255, 112, 95, 0.14);
+  color: var(--text);
+}
+
+.confidence-track {
+  height: 10px;
+  margin-top: 14px;
+  overflow: hidden;
+  border: 1px solid var(--line-soft);
+  border-radius: 999px;
+  background: rgba(246, 242, 232, 0.05);
+}
+
+.confidence-track span {
+  display: block;
+  width: 0%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--coral), var(--amber), var(--green));
+  transition: width 180ms ease;
+}
+
+.prediction-feedback {
+  min-height: 66px;
+  margin-top: 14px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.reflection-panel.high-confidence .prediction-feedback {
+  color: var(--text);
+}
+
+.q-card,
+.metric,
+.before-now div,
+.demo-metrics div,
+.event-log li,
+.memory-tile {
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.q-card.best,
+.mastery-step.active {
+  box-shadow: inset 0 0 0 1px rgba(155, 216, 95, 0.18);
+}
+
+.event-log li:first-child {
+  border-color: rgba(255, 209, 102, 0.42);
+  animation: lesson-rise 420ms ease both;
+}
+
+.canvas-wrap,
+#gameCanvas {
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+@keyframes status-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 4px rgba(155, 216, 95, 0.16);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(155, 216, 95, 0.06);
+  }
+}
+
+@keyframes progress-flow {
+  from {
+    background-position: 0% 0;
+  }
+  to {
+    background-position: 180% 0;
+  }
+}
+
+@keyframes lesson-rise {
+  from {
+    transform: translateY(5px);
+    opacity: 0.65;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
 @media (max-width: 1060px) {
   .experiment,
   .demo-panel,
@@ -894,6 +1282,15 @@ select {
   .teaching-board,
   .workspace {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "stage"
+      "loop"
+      "dashboard";
+  }
+
+  .dashboard {
+    max-height: none;
+    overflow: visible;
   }
 
   .dashboard,
@@ -911,17 +1308,26 @@ select {
 
 @media (max-width: 720px) {
   body {
+    width: 100%;
     overflow-x: hidden;
   }
 
   .shell {
-    width: 100%;
-    padding: 14px 16px 36px;
+    width: auto;
+    max-width: none;
+    margin: 0 16px;
+    padding: 14px 0 36px;
   }
 
   .hero-copy {
     max-width: 100%;
     font-size: 0.96rem;
+  }
+
+  .demo-panel p,
+  .prediction-prompt,
+  .prediction-feedback {
+    overflow-wrap: anywhere;
   }
 
   .run-state {
@@ -965,6 +1371,18 @@ select {
 
   .controls {
     gap: 10px;
+  }
+
+  .scorebar {
+    top: 8px;
+    left: 10px;
+    right: 10px;
+    font-size: 0.72rem;
+  }
+
+  .scorebar strong {
+    font-size: 1rem;
+    margin-left: 4px;
   }
 
   button {
@@ -1015,11 +1433,19 @@ select {
   .guide-card span,
   .loop-card p,
   .event-log p,
-  .idea-panel p {
+  .paper-map span {
     max-width: 32ch;
   }
 
   .q-values {
+    grid-template-columns: 1fr;
+  }
+
+  .prediction-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .paper-map {
     grid-template-columns: 1fr;
   }
 
